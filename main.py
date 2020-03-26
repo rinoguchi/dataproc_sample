@@ -31,7 +31,7 @@ SENTENCES: List[str] = [
 
 def main():
     # 実行するpythonファイルをGCSにアップロード（事前に手作業でアップロードしてもOK）
-    storage_client: StorageClient = StorageClient(env['PROJECT_ID'], env['BUCKET_NAME'], env['STORAGE_CREDENTIAL_PATH'])
+    storage_client: StorageClient = StorageClient(env['BUCKET_NAME'], env['PROJECT_ID'], env['STORAGE_CREDENTIAL_PATH'])
     main_python_file_uri: str = storage_client.upload_to_gcs('./master.py', 'dataproc')
     python_file_uris: List[str] = [storage_client.upload_to_gcs(path, 'dataproc') for path in ['./worker.py', './storage.py']]
 
@@ -44,14 +44,14 @@ def main():
     os.remove(data_file_path)
 
     # pysparkのjobを実行
-    with DataprocCluster(env['PROJECT_ID'],
-                         env['DATAPROC_CREDENTIAL_PATH'],
-                         cluster_name='test-cluster',
-                         creates_cluster=True,
-                         pip_packages='more-itertools==5.0.0 nltk==3.4.5 gensim==3.8.1 google-cloud-storage==1.20.0',
-                         environment_variables={'PROJECT_ID': env['PROJECT_ID'],
-                                                'BUCKET_NAME': env['BUCKET_NAME']}
-                         ) as cluster:
+    with DataprocCluster(
+        env['PROJECT_ID'],
+        env['DATAPROC_CREDENTIAL_PATH'],
+        cluster_name='test-cluster',
+        creates_cluster=True,
+        pip_packages='more-itertools==5.0.0 nltk==3.4.5 gensim==3.8.1 google-cloud-storage==1.20.0',
+        environment_variables={'PROJECT_ID': env['PROJECT_ID'], 'BUCKET_NAME': env['BUCKET_NAME']}
+    ) as cluster:
         cluster.submit_pyspark_job(main_python_file_uri, python_file_uris)
         print('do something')
 

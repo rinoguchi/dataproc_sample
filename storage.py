@@ -8,19 +8,17 @@ from google.cloud.storage.blob import Blob
 
 
 class StorageClient:
-    project_id: str
     bucket_name: str
     storage_client: storage.Client
     bucket: Bucket
 
-    def __init__(self, project_id: str, bucket_name: str, storage_credential_path: Optional[str] = None):
-        self.project_id = project_id
+    def __init__(self, bucket_name: str, project_id: Optional[str] = None, storage_credential_path: Optional[str] = None):
         self.bucket_name = bucket_name
-        if storage_credential_path is not None:
+        if project_id is None or storage_credential_path is None:
+            self.storage_client = storage.Client()
+        else:
             storage_credentials = Credentials.from_service_account_file(storage_credential_path)
             self.storage_client = storage.Client(project=project_id, credentials=storage_credentials)
-        else:
-            self.storage_client = storage.Client(project=project_id)
         self.bucket = self.storage_client.get_bucket(self.bucket_name)
 
     def upload_to_gcs(self, file_path: str, gcs_base_path: str) -> str:
