@@ -2,7 +2,7 @@ from typing import List
 import os
 from os import environ as env
 from dataproc import DataprocCluster
-from storage import StorageClient
+from module.storage import StorageClient
 
 SENTENCES: List[str] = [
     "Good words cool more than c",
@@ -32,15 +32,18 @@ SENTENCES: List[str] = [
 def main():
     # 実行するpythonファイルをGCSにアップロード（事前に手作業でアップロードしてもOK）
     storage_client: StorageClient = StorageClient(env['BUCKET_NAME'], env['PROJECT_ID'], env['STORAGE_CREDENTIAL_PATH'])
-    main_python_file_uri: str = storage_client.upload_to_gcs('./master.py', 'dataproc')
-    python_file_uris: List[str] = [storage_client.upload_to_gcs(path, 'dataproc') for path in ['./worker.py', './storage.py']]
+    main_python_file_uri: str = storage_client.upload_to_gcs('./master.py', 'dataproc/src')
+    python_file_uris: List[str] = [
+        storage_client.upload_to_gcs('./worker.py', 'dataproc/src'),
+        storage_client.upload_to_gcs('./module/storage.py', 'dataproc/src/module'),
+    ]
 
     # 処理対象データをGCSにアップロード（事前に手作業でアップロードしてもOK）
     data_file_path: str = './data.txt'
     with open(data_file_path, 'w') as f:
         for sentence in SENTENCES:
             f.write(sentence + '\n')
-    storage_client.upload_to_gcs(data_file_path, 'dataproc')
+    storage_client.upload_to_gcs(data_file_path, 'dataproc/input')
     os.remove(data_file_path)
 
     # pysparkのjobを実行
