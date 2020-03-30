@@ -9,6 +9,7 @@ from google.cloud.dataproc_v1.gapic.transports.cluster_controller_grpc_transport
 from google.cloud.dataproc_v1.gapic.transports.job_controller_grpc_transport import JobControllerGrpcTransport
 from google.oauth2.service_account import Credentials
 from google.api_core.operation import Operation
+from google.protobuf.duration_pb2 import Duration
 
 
 class DataprocCluster:
@@ -33,6 +34,7 @@ class DataprocCluster:
         num_master_instances: int = 1,
         worker_machine_type: str = 'n1-standard-1',
         num_worker_instances: int = 2,
+        idle_delete_ttl: Duration = Duration(seconds=3600),  # defaultは1時間
         pip_packages: str = '',
         environment_variables: Dict[str, str] = dict()
     ):
@@ -52,13 +54,21 @@ class DataprocCluster:
 
         print(f'create_cluster {self.cluster_name} started.')
 
+        properties: Dict[str, str] = dict()
+        properties['yarn:yarn.nodemanager.vmem-check-enabled'] = 'false'  # yarn-site.xmlの形式
+        for item in environment_variables.items():
+            properties[f'spark-env:{item[0]}'] = item[1]  # spark-env.shの形式
+
         cluster_data = {
             'project_id': self.project_id,
             'cluster_name': self.cluster_name,
             'config': {
                 'software_config': {
                     'image_version': '1.4-ubuntu18',
-                    'properties': dict((f'spark-env:{v[0]}', v[1]) for v in environment_variables.items())
+                    'properties': properties
+                },
+                'lifecycle_config': {
+                    'idle_delete_ttl': idle_delete_ttl
                 },
                 'initialization_actions': [{
                     'executable_file': 'gs://dataproc-initialization-actions/python/pip-install.sh'
@@ -73,14 +83,14 @@ class DataprocCluster:
                     'num_instances': num_master_instances,
                     'machine_type_uri': master_machine_type,
                     'disk_config': {
-                        'boot_disk_size_gb': 512
+                        'boot_disk_size_gb': 128
                     }
                 },
                 'worker_config': {
                     'num_instances': num_worker_instances,
                     'machine_type_uri': worker_machine_type,
                     'disk_config': {
-                        'boot_disk_size_gb': 512
+                        'boot_disk_size_gb': 128
                     }
                 }
             }

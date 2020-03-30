@@ -1,7 +1,9 @@
 from typing import List
 import os
 from os import environ as env
-from dataproc import DataprocCluster
+from google.protobuf.duration_pb2 import Duration
+from module.dataproc import DataprocCluster
+
 from module.storage import StorageClient
 
 SENTENCES: List[str] = [
@@ -52,6 +54,7 @@ def main():
         env['DATAPROC_CREDENTIAL_PATH'],
         cluster_name='test-cluster',
         creates_cluster=True,
+        idle_delete_ttl=Duration(seconds=1000),
         pip_packages='more-itertools==5.0.0 nltk==3.4.5 gensim==3.8.1 google-cloud-storage==1.20.0',
         environment_variables={'PROJECT_ID': env['PROJECT_ID'], 'BUCKET_NAME': env['BUCKET_NAME']}
     ) as cluster:

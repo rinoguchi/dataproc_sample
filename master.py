@@ -1,5 +1,5 @@
 from os import environ as env
-import pyspark
+from pyspark import SparkContext, RDD, Broadcast
 from typing import List, Tuple
 from decimal import Decimal
 from itertools import chain
@@ -25,9 +25,9 @@ def main():
     chuncked_sentences_indexes: List[int] = range(len(chuncked_sentences))
 
     # 分散処理
-    sc = pyspark.SparkContext()
-    rdd = sc.parallelize(chuncked_sentences_indexes)
-    broadcasted_chuncked_sentences = sc.broadcast(chuncked_sentences)
+    sc: SparkContext = SparkContext()
+    rdd: RDD = sc.parallelize(chuncked_sentences_indexes)
+    broadcasted_chuncked_sentences: Broadcast = sc.broadcast(chuncked_sentences)
     vectors: List[List[Tuple[int, Decimal]]] = list(chain.from_iterable(
         rdd.map(lambda index: worker.vectorize(broadcasted_chuncked_sentences.value[index])).collect()
     ))
