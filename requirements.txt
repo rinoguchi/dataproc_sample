@@ -1,2 +1,7 @@
+# dataproc用
 google-cloud-dataproc==0.7.0
 google-cloud-storage==1.20.0
+
+# pysparkパッケージだけで実行 or standalone実行用
+pyspark==2.4.3
+py4j==0.10.7
